@@ -1,0 +1,77 @@
+package com.example.Nomia.service;
+
+import com.example.Nomia.model.AccountGroup;
+import com.example.Nomia.model.BTransaction;
+import com.example.Nomia.repository.AccountGroupRepository;
+import com.example.Nomia.repository.BTransactionRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
+import java.util.Locale;
+
+@Service
+public class CsvImportService {
+
+    @Autowired
+    private BTransactionRepository bTransactionRepository;
+
+    // För att göra om 31 mars 2025 till 2025-03-31
+    private final DateTimeFormatter swedishDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("sv", "SE"));
+
+    private LocalDate parseSwedishDate(String dateStr) {
+        return LocalDate.parse(dateStr.trim(), swedishDateFormatter);
+    }
+
+    public void importCsv(MultipartFile file) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String line;
+            boolean isFirstLine = true;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            while ((line = reader.readLine()) != null) {
+
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue; // hoppa över headern
+                }
+
+                String[] parts = line.split(";");
+                if (parts.length < 4) continue;
+                String dateStr = parts[0].trim();
+
+                String text = parts[2].trim();
+
+                String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
+
+                LocalDate dateToXX = parseSwedishDate(dateStr);
+
+                BTransaction transaction = new BTransaction();
+                transaction.setDate(dateToXX);
+                transaction.setDescription(text);
+                try {
+                    BigDecimal amount = new BigDecimal(amountStr).abs();
+                    transaction.setAmount(amount);
+                } catch (NumberFormatException e) {
+                    // Logga fel eller hantera det på något sätt
+                    System.err.println("Ogiltigt belopp: " + amountStr);
+                }
+
+                System.out.println("Sparar transaktionen");
+
+                bTransactionRepository.save(transaction);
+            }
+        }
+    }
+}
+
+

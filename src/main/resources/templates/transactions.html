@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Transaktioner</title>
+</head>
+<body>
+<h1>Transaktioner</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Datum</th>
+        <th>Beskrivning</th>
+        <th>Belopp</th>
+        <th>Konto</th>
+        <th>Åtgärd</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="trans : ${transactions}">
+        <form th:action="@{/transactions/assign}" method="post">
+            <td th:text="${trans.date}"></td>
+            <td th:text="${trans.description}"></td>
+            <td th:text="${trans.amount}"></td>
+            <td>
+                <select name="accountId">
+                    <option th:each="acc : ${accounts}"
+                            th:value="${acc.accountId}"
+                            th:text="${acc.name}"
+                            th:selected="${trans.account != null} ? ${acc.accountId} == ${trans.account.accountId} : false">
+                    </option>
+                </select>
+            </td>
+            <td>
+                <input type="hidden" name="transactionId" th:value="${trans.transId}" />
+                <button type="submit">Spara</button>
+            </td>
+        </form>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
