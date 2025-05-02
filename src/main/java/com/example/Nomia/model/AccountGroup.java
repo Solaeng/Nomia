@@ -19,13 +19,21 @@ public class AccountGroup {
     private List<Account> accountList = new ArrayList<>();
 
     // Getters and setters
+    public Long getGroupId() {
+        return groupId;
+    }
 
-    //    Vilken sida äger relationen?
-    //    Hur vill du hämta kategorierna? (LAZY/EAGER)
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
+    }
 
-  //  @OneToMany(fetch = FetchType.EAGER)
-  //  private Account account;
+    public String getGroupName() {
+        return groupName;
+    }
 
-  //  @OneToMany(mappedBy = "accountgruop", fetch = FetchType.EAGER)
+    public void setGroupName(String groupName) {
+        this.groupName = groupName;
+    }
+
 }
 
