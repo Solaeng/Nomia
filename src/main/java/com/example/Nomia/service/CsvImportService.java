@@ -4,6 +4,7 @@ import com.example.Nomia.model.AccountGroup;
 import com.example.Nomia.model.BTransaction;
 import com.example.Nomia.repository.AccountGroupRepository;
 import com.example.Nomia.repository.BTransactionRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,7 +50,10 @@ public class CsvImportService {
                 if (parts.length < 4) continue;
                 String dateStr = parts[0].trim();
 
+                // =" Qstar Atran 0062         , Atran        "
                 String text = parts[2].trim();
+                text = text.substring(3);
+                text = StringUtils.chop(text).trim();
 
                 String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
 

@@ -1,5 +1,6 @@
 package com.example.Nomia.model;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +13,8 @@ public class AccountGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long groupId;
 
-    @Column(name = "groupName")
+    @NotBlank
+    @Column(name = "groupName", nullable = false)
     private String groupName;
 
    @OneToMany(mappedBy = "accountGroup", cascade = CascadeType.ALL)
