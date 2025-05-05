@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Groups</title>
+</head>
+<body>
+<h1>Kontogrupper</h1>
+
+<div>
+    <h3>Lägg till ny grupp</h3>
+    <input id="newGroupName" placeholder="Gruppnamn">
+    <button onclick="createGroup()">Skapa</button>
+</div>
+
+<hr>
+
+<div id="groupList"></div>
+
+<script>
+    const API_URL = "/api/account-groups";
+
+    function loadGroups() {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(groups => {
+                const list = document.getElementById("groupList");
+                list.innerHTML = "<h3>Befintliga grupper</h3>";
+                groups.forEach(group => {
+                    list.innerHTML += `
+                        <div>
+                            <input value="${group.groupName}" onchange="updateGroup(${group.groupId}, this.value)" />
+                            <button onclick="deleteGroup(${group.groupId})">Ta bort</button>
+                        </div>
+                    `;
+                });
+            });
+    }
+
+    function createGroup() {
+        const name = document.getElementById("newGroupName").value;
+        fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groupName: name })
+        }).then(() => {
+            document.getElementById("newGroupName").value = "";
+            loadGroups();
+        });
+    }
+
+    function updateGroup(id, name) {
+        fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ groupName: name })
+        }).then(loadGroups);
+    }
+
+    function deleteGroup(id) {
+        fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        }).then(loadGroups);
+    }
+
+    loadGroups();
+</script>
+</body>
+</html>
