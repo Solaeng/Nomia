@@ -25,8 +25,6 @@ public class FileChecksumService {
     public void saveChecksum(byte[] fileBytes, String filename) throws NoSuchAlgorithmException {
         String checksum = calculateChecksum(fileBytes);
         LocalDateTime uploaded_date = LocalDateTime.now();
-       // String filename = "Annas fil";
-                //multipartFile.getOriginalFilename();
 
         FileChecksum fileChecksum = new FileChecksum(checksum, filename, uploaded_date);
         fileChecksumRepository.save(fileChecksum);
