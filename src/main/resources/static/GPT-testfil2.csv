@@ -1,0 +1,19 @@
+Datum;Typ;Beskrivning;Belopp
+;;;
+   ;   ;    ;
+1 mars 2025;KORREKT;Elräkning;1200.50
+3 mars 2025;;ABCDEFGH;87500.00
+5 mars 2025;KORREKT; Hy
+ra" ;8500.00
+25 mars 2025;;Lång beskrivning som är väldigt väldigt väldigt väldigt lång och kanske överstiger vad du tänkt digaaaaaaaaaaaaaaaassssssssssssssssssssssdddddddddddddddddddffffffffffffffqqqqqqqqqqqqqqqqqqqqqqwwwwwwwwwwwwwwwwwwwwweeeeeeeeeeeeeeeeeeeeeeerrrrrrrrrrrrrrrrttttttttttttttt;300
+28 mars 2025;KORREKT;Elräkning;3200.50
+32 mars 2025;;Felaktigt datum;450
+; ;Tomt datum;500
+1 april 2025;;"Drivmedel";-900.00
+2 april 2025;;Cafébesök;0
+24 april 2025;FEL;;99
+24 april 2025;FEL;A;99
+24 april 2025;FEL;AB;99
+24 april 2025;FEL;ABC;99
+24 april 2025;RÄTT;@@@@@@@£$4%¤#&/nnn;99
+3 april 2025;FEl;Handla mat;15A00.25

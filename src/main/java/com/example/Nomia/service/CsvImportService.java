@@ -4,6 +4,7 @@ import com.example.Nomia.model.AccountGroup;
 import com.example.Nomia.model.BTransaction;
 import com.example.Nomia.repository.AccountGroupRepository;
 import com.example.Nomia.repository.BTransactionRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.IllegalArgumentException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -47,16 +49,51 @@ public class CsvImportService {
 
                 String[] parts = line.split(";");
                 if (parts.length < 4) continue;
+
+                /********************* DATE *********************************************/
                 String dateStr = parts[0].trim();
 
+                /********************* DESCRIPTION ***************************************/
+                // =" Qstar Atran 0062         , Atran        "
                 String text = parts[2].trim();
+                try{
+                    if (text.length() < 4) {
+                        throw new IllegalArgumentException("Textfältet saknas. Kontrollera följande datum: " + dateStr);
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Hoppar över rad pga fel: " + e.getMessage());
+                    continue;
+                }
+                // Ta bort de tre första tecknen
+                text = text.substring(3);
+                // ta bort sista tecknet (vilket funkar om det alltid är ")
+                text = StringUtils.chop(text).trim();
+                try {
+                    if (text == null || text.trim().isEmpty()) {
+                        throw new IllegalArgumentException("Textfältet saknas. Kontrollera följande datum: " + dateStr);
+                    }
 
+                    if (text.length() > 255) {
+                        throw new IllegalArgumentException("Textfältet överskrider 255 tecken." + text);
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Hoppar över rad pga fel: " + e.getMessage());
+                    continue;
+                }
+
+                /********************* AMOUNT ***************************************/
                 String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
 
-                LocalDate dateToXX = parseSwedishDate(dateStr);
+
 
                 BTransaction transaction = new BTransaction();
-                transaction.setDate(dateToXX);
+                try {
+                    LocalDate dateToStr = parseSwedishDate(dateStr);
+                    transaction.setDate(dateToStr);
+                } catch (DateTimeParseException e) {
+                    System.out.println("Ogiltigt datum: " + dateStr + " – hoppar över raden.");
+                    continue;
+                }
                 transaction.setDescription(text);
                 try {
                     BigDecimal amount = new BigDecimal(amountStr).abs();
@@ -64,13 +101,15 @@ public class CsvImportService {
                 } catch (NumberFormatException e) {
                     // Logga fel eller hantera det på något sätt
                     System.err.println("Ogiltigt belopp: " + amountStr);
+                    continue;
                 }
 
-                System.out.println("Sparar transaktionen");
-
                 bTransactionRepository.save(transaction);
+
             }
+
         }
+
     }
 }
 
