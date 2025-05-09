@@ -40,6 +40,7 @@ public class CsvImportService {
 
     public void importCsv(MultipartFile file) throws IOException, NoSuchAlgorithmException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+
             byte[] fileBytes = file.getBytes();
             if (fileChecksumService.isDuplicateFile(fileBytes)) {
               throw new IllegalArgumentException("Den här filen har redan lästs in.");
