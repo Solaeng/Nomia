@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalArgumentException;
 import java.math.BigDecimal;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -27,6 +28,9 @@ public class CsvImportService {
     @Autowired
     private BTransactionRepository bTransactionRepository;
 
+    @Autowired
+    private FileChecksumService fileChecksumService;
+
     // För att göra om 31 mars 2025 till 2025-03-31
     private final DateTimeFormatter swedishDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("sv", "SE"));
 
@@ -34,8 +38,12 @@ public class CsvImportService {
         return LocalDate.parse(dateStr.trim(), swedishDateFormatter);
     }
 
-    public void importCsv(MultipartFile file) throws IOException {
+    public void importCsv(MultipartFile file) throws IOException, NoSuchAlgorithmException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            byte[] fileBytes = file.getBytes();
+            if (fileChecksumService.isDuplicateFile(fileBytes)) {
+              throw new IllegalArgumentException("Den här filen har redan lästs in.");
+          }
             String line;
             boolean isFirstLine = true;
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -107,6 +115,7 @@ public class CsvImportService {
                 bTransactionRepository.save(transaction);
 
             }
+            fileChecksumService.saveChecksum(fileBytes);
 
         }
 
