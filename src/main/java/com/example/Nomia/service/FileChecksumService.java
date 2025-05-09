@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 @Service
@@ -22,7 +23,12 @@ public class FileChecksumService {
 
     public void saveChecksum(byte[] fileBytes) throws NoSuchAlgorithmException {
         String checksum = calculateChecksum(fileBytes);
-        fileChecksumRepository.save(new FileChecksum(checksum));
+        LocalDateTime uploaded_date = LocalDateTime.now();
+//        FileChecksum fileChecksum = new FileChecksum(checksum, LocalDateTime.now());
+//        fileChecksumRepository.save(new FileChecksum(fileChecksum));
+        FileChecksum fileChecksum = new FileChecksum(checksum, uploaded_date);
+        fileChecksumRepository.save(fileChecksum);
+
     }
 
     private String calculateChecksum(byte[] fileBytes) throws NoSuchAlgorithmException {

@@ -1,6 +1,7 @@
 package com.example.Nomia.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,16 +19,17 @@ public class FileChecksum {
     private String checksum;
 
 
-//    @Column(nullable = false)
-//    private LocalDateTime uploadedDate;
+    @Column(nullable = false)
+    private LocalDateTime uploadedDate;
 
-    public FileChecksum() {}
+    public FileChecksum() {
+    }
 
     // public FileChecksum(String checksum, String filename, LocalDateTime uploadedDate) {
-    public FileChecksum(String checksum) {
+    public FileChecksum(String checksum,  LocalDateTime uploadedDate) {
         this.checksum = checksum;
-   //     this.filename = filename;
-   //     this.uploadedDate = uploadedDate;
+        //     this.filename = filename;
+        this.uploadedDate = uploadedDate;
     }
 
     public Long getFileId() {
@@ -49,12 +51,12 @@ public class FileChecksum {
 //    public void setFilename(String filename) {
 //        this.filename = filename;
 //    }
-//
-//    public LocalDateTime getUploadedDate() {
-//        return uploadedDate;
-//    }
-//
-//    public void setUploadedDate(LocalDateTime uploadedDate) {
-//        this.uploadedDate = uploadedDate;
-//    }
+
+    public LocalDateTime getUploadedDate() {
+        return uploadedDate;
+    }
+
+    public void setUploadedDate(LocalDateTime uploadedDate) {
+        this.uploadedDate = uploadedDate;
+    }
 }
