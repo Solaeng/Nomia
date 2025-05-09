@@ -41,16 +41,17 @@ public class CsvImportService {
             String filename = file.getOriginalFilename();
 
             if (fileChecksumService.isDuplicateFile(fileBytes)) {
-              throw new IllegalArgumentException("Den här filen har redan lästs in: " + filename);
-          }
+                throw new IllegalArgumentException("Den här filen har redan lästs in: " + filename);
+            }
             String line;
             boolean isFirstLine = true;
 
             while ((line = reader.readLine()) != null) {
 
+                // hoppa över header
                 if (isFirstLine) {
                     isFirstLine = false;
-                    continue; // hoppa över headern
+                    continue;
                 }
 
                 // Dela upp raden
@@ -64,69 +65,45 @@ public class CsvImportService {
                 String text = parts[2].trim();
                 String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
 
-                /********************* DATE *********************************************/
-
-
-                /********************* DESCRIPTION ***************************************/
-                // =" Qstar Atran 0062         , Atran        "
-
-                try{
-                    // Datumhantering
-     //               LocalDate date = parseSwedishDate(dateStr);
-
-                    if (text.length() < 4) {
-                        throw new IllegalArgumentException("Textfältet saknas. Kontrollera följande datum: " + dateStr);
-                    }
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Hoppar över rad pga fel: " + e.getMessage());
-                    continue;
-                }
-                // Ta bort de tre första tecknen
-                text = text.substring(3);
-                // ta bort sista tecknet (vilket funkar om det alltid är ett citattecken)
-                text = StringUtils.chop(text).trim();
                 try {
-                    if (text == null || text.trim().isEmpty()) {
-                        throw new IllegalArgumentException("Textfältet saknas. Kontrollera följande datum: " + dateStr);
+                    //   Datumhantering
+                    LocalDate date = parseSwedishDate(dateStr);
+
+                    // Textfält (tar bort första tre och sista tecknet)   =" Qstar Atran 0062         , Atran        "
+                    if (text.startsWith("=\"")) {
+                        text = text.substring(2);
+                    }
+                    text = StringUtils.chop(text).trim();
+
+                    if (text.length() < 4 || text.length() > 255 || text == null) {
+                        throw new IllegalArgumentException("Textfältet är för kort, för långt eller blankt: " + text + " datum: " + dateStr);
                     }
 
-                    if (text.length() > 255) {
-                        throw new IllegalArgumentException("Textfältet överskrider 255 tecken." + text);
-                    }
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Hoppar över rad pga fel: " + e.getMessage());
-                    continue;
-                }
+                    // Belopp
+                    BigDecimal amount = new BigDecimal(amountStr).abs();
 
-                /********************* AMOUNT ***************************************/
+                    // Skapa transaktion
+                    BTransaction transaction = new BTransaction();
+                    transaction.setDate(date);
+                    transaction.setDescription(text);
+                    transaction.setAmount(amount);
 
+                    // Spara transaktion
+                    bTransactionRepository.save(transaction);
 
-                BTransaction transaction = new BTransaction();
-                try {
-                    LocalDate dateToStr = parseSwedishDate(dateStr);
-                    transaction.setDate(dateToStr);
+                    // Logga fel eller hantera det på något sätt
                 } catch (DateTimeParseException e) {
                     System.out.println("Ogiltigt datum: " + dateStr + " – hoppar över raden.");
-                    continue;
-                }
-                transaction.setDescription(text);
-                try {
-                    BigDecimal amount = new BigDecimal(amountStr).abs();
-                    transaction.setAmount(amount);
                 } catch (NumberFormatException e) {
-                    // Logga fel eller hantera det på något sätt
-                    System.err.println("Ogiltigt belopp: " + amountStr);
-                    continue;
+                    System.out.println("Ogiltigt belopp: " + amountStr + " – hoppar över raden.");
+                }                catch (IllegalArgumentException e) {
+                    System.out.println("Felaktigt textfält eller annan validering misslyckades: " + e.getMessage());
                 }
+            }
 
-                bTransactionRepository.save(transaction);
+            // Spara checksumman efter en lyckad import
+                fileChecksumService.saveChecksum(fileBytes, filename);
 
             }
-            fileChecksumService.saveChecksum(fileBytes, filename);
-
         }
-
     }
-}
-
-
