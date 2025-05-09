@@ -1,8 +1,6 @@
 package com.example.Nomia.service;
 
-import com.example.Nomia.model.AccountGroup;
 import com.example.Nomia.model.BTransaction;
-import com.example.Nomia.repository.AccountGroupRepository;
 import com.example.Nomia.repository.BTransactionRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalArgumentException;
@@ -19,7 +16,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
 import java.util.Locale;
 
 @Service
@@ -42,12 +38,13 @@ public class CsvImportService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
 
             byte[] fileBytes = file.getBytes();
+            String filename = file.getOriginalFilename();
+
             if (fileChecksumService.isDuplicateFile(fileBytes)) {
-              throw new IllegalArgumentException("Den här filen har redan lästs in.");
+              throw new IllegalArgumentException("Den här filen har redan lästs in: " + filename);
           }
             String line;
             boolean isFirstLine = true;
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
             while ((line = reader.readLine()) != null) {
 
@@ -56,16 +53,27 @@ public class CsvImportService {
                     continue; // hoppa över headern
                 }
 
+                // Dela upp raden
                 String[] parts = line.split(";");
-                if (parts.length < 4) continue;
+                if (parts.length < 4) {
+                    System.out.println("Felaktigt format på rad: " + line);
+                    continue;
+                }
+
+                String dateStr = parts[0].trim();
+                String text = parts[2].trim();
+                String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
 
                 /********************* DATE *********************************************/
-                String dateStr = parts[0].trim();
+
 
                 /********************* DESCRIPTION ***************************************/
                 // =" Qstar Atran 0062         , Atran        "
-                String text = parts[2].trim();
+
                 try{
+                    // Datumhantering
+     //               LocalDate date = parseSwedishDate(dateStr);
+
                     if (text.length() < 4) {
                         throw new IllegalArgumentException("Textfältet saknas. Kontrollera följande datum: " + dateStr);
                     }
@@ -75,7 +83,7 @@ public class CsvImportService {
                 }
                 // Ta bort de tre första tecknen
                 text = text.substring(3);
-                // ta bort sista tecknet (vilket funkar om det alltid är ")
+                // ta bort sista tecknet (vilket funkar om det alltid är ett citattecken)
                 text = StringUtils.chop(text).trim();
                 try {
                     if (text == null || text.trim().isEmpty()) {
@@ -91,8 +99,6 @@ public class CsvImportService {
                 }
 
                 /********************* AMOUNT ***************************************/
-                String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
-
 
 
                 BTransaction transaction = new BTransaction();
@@ -116,7 +122,7 @@ public class CsvImportService {
                 bTransactionRepository.save(transaction);
 
             }
-            fileChecksumService.saveChecksum(fileBytes);
+            fileChecksumService.saveChecksum(fileBytes, filename);
 
         }
 

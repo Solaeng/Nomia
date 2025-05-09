@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 
+
 @Service
 public class FileChecksumService {
 
@@ -21,12 +22,13 @@ public class FileChecksumService {
         return fileChecksumRepository.existsByChecksum(checksum);
     }
 
-    public void saveChecksum(byte[] fileBytes) throws NoSuchAlgorithmException {
+    public void saveChecksum(byte[] fileBytes, String filename) throws NoSuchAlgorithmException {
         String checksum = calculateChecksum(fileBytes);
         LocalDateTime uploaded_date = LocalDateTime.now();
-//        FileChecksum fileChecksum = new FileChecksum(checksum, LocalDateTime.now());
-//        fileChecksumRepository.save(new FileChecksum(fileChecksum));
-        FileChecksum fileChecksum = new FileChecksum(checksum, uploaded_date);
+       // String filename = "Annas fil";
+                //multipartFile.getOriginalFilename();
+
+        FileChecksum fileChecksum = new FileChecksum(checksum, filename, uploaded_date);
         fileChecksumRepository.save(fileChecksum);
 
     }
