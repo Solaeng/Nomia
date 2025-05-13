@@ -15,7 +15,9 @@ import java.math.BigDecimal;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.Locale;
 
 @Service
@@ -28,10 +30,25 @@ public class CsvImportService {
     private FileChecksumService fileChecksumService;
 
     // För att göra om 31 mars 2025 till 2025-03-31
-    private final DateTimeFormatter swedishDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy", new Locale("sv", "SE"));
+
+    private final DateTimeFormatter swedishDateFormatter = new DateTimeFormatterBuilder()
+            .appendPattern("d MMMM yyyy")
+            .parseStrict()
+            .toFormatter(new Locale("sv", "SE"));
 
     private LocalDate parseSwedishDate(String dateStr) {
-        return LocalDate.parse(dateStr.trim(), swedishDateFormatter);
+        try {
+            LocalDate parsedDate = LocalDate.parse(dateStr.trim(), swedishDateFormatter);
+            // Kontrollera att dagen är korrekt för den givna månaden
+            String[] parts = dateStr.trim().split(" ");
+            int day = Integer.parseInt(parts[0]);
+            if (parsedDate.getDayOfMonth() != day) {
+                throw new IllegalArgumentException("Ogiltigt datum: " + dateStr);
+            }
+            return parsedDate;
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Ogiltigt datumformat: " + dateStr);
+        }
     }
 
     public void importCsv(MultipartFile file) throws IOException, NoSuchAlgorithmException {
@@ -66,44 +83,45 @@ public class CsvImportService {
                 String amountStr = parts[3].trim().replace(",", "."); // om svenska kommatecken
 
                 try {
-                    //   Datumhantering
-                    LocalDate date = parseSwedishDate(dateStr);
+                //   Datumhantering
+                LocalDate date;
+                date = parseSwedishDate(dateStr);
 
-                    // Textfält (tar bort första tre och sista tecknet)   =" Qstar Atran 0062         , Atran        "
-                    if (text.startsWith("=\"")) {
-                        text = text.substring(2);
-                    }
-                    text = StringUtils.chop(text).trim();
-
-                    if (text.length() < 4 || text.length() > 255 || text == null) {
-                        throw new IllegalArgumentException("Textfältet är för kort, för långt eller blankt: " + text + " datum: " + dateStr);
-                    }
-
-                    // Belopp
-                    BigDecimal amount = new BigDecimal(amountStr).abs();
-
-                    // Skapa transaktion
-                    BTransaction transaction = new BTransaction();
-                    transaction.setDate(date);
-                    transaction.setDescription(text);
-                    transaction.setAmount(amount);
-
-                    // Spara transaktion
-                    bTransactionRepository.save(transaction);
-
-                    // Logga fel eller hantera det på något sätt
-                } catch (DateTimeParseException e) {
-                    System.out.println("Ogiltigt datum: " + dateStr + " – hoppar över raden.");
-                } catch (NumberFormatException e) {
-                    System.out.println("Ogiltigt belopp: " + amountStr + " – hoppar över raden.");
-                }                catch (IllegalArgumentException e) {
-                    System.out.println("Felaktigt textfält eller annan validering misslyckades: " + e.getMessage());
+                // Textfält (tar bort första tre och sista tecknet)   =" Qstar Atran 0062         , Atran        "
+                if (text.startsWith("=\"")) {
+                    text = text.substring(2);
                 }
-            }
+                text = StringUtils.chop(text).trim();
 
-            // Spara checksumman efter en lyckad import
-                fileChecksumService.saveChecksum(fileBytes, filename);
+                if (text.length() < 4 || text.length() > 255 || text == null) {
+                    throw new IllegalArgumentException("Textfältet är för kort, för långt eller blankt: " + text + " datum: " + dateStr);
+                }
 
+                // Belopp
+                BigDecimal amount = new BigDecimal(amountStr).abs();
+
+                // Skapa transaktion
+                BTransaction transaction = new BTransaction();
+                transaction.setDate(date);
+                transaction.setDescription(text);
+                transaction.setAmount(amount);
+
+                // Spara transaktion
+                bTransactionRepository.save(transaction);
+
+                // Logga fel eller hantera det på något sätt
+            } catch(DateTimeParseException e){
+                System.out.println("Ogiltigt datum: " + dateStr + " – hoppar över raden.");
+            } catch(NumberFormatException e){
+                System.out.println("Ogiltigt belopp: " + amountStr + " – hoppar över raden.");
+            }  catch(IllegalArgumentException e){
+                System.out.println("Felaktigt textfält eller annan validering misslyckades: " + e.getMessage());
             }
         }
+
+        // Spara checksumman efter en lyckad import
+        fileChecksumService.saveChecksum(fileBytes, filename);
+
+    }
+}
     }
